@@ -1,16 +1,31 @@
-import React from "react";
-import logo from "./logo.svg";
-import { Route, Routes } from "react-router-dom";
 import "./App.css";
-import Weekly from "./views/weekly";
-import Monthly from "./views/monthly";
+import { useTheme } from "./context/ThemeContext";
+import TopNav from "./components/topNav/TopNav";
+import SideNav from "./components/sideNav/SideNav";
+import MainContent from "./components/mainContent/MainContent";
+import { SidebarProvider } from "./context/SidebarContext";
+import { CalendarProvider } from "./context/CalendarContext";
 
 function App() {
+  const { theme } = useTheme();
+
   return (
-    <Routes>
-      <Route path="/" element={<Weekly />} />
-      <Route path="/monthly" element={<Monthly />} />
-    </Routes>
+    <CalendarProvider>
+      <SidebarProvider>
+        <div
+          data-theme={theme}
+          className="flex flex-col h-screen"
+          data-testid="app-container"
+        >
+          <TopNav />
+          <div className="flex flex-auto mt-4 ">
+            <SideNav />
+            <MainContent />
+          </div>
+        </div>
+      </SidebarProvider>
+    </CalendarProvider>
   );
 }
+
 export default App;
