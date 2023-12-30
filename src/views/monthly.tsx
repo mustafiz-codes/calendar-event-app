@@ -6,94 +6,50 @@ import { getDatesInRange } from "../components/common/common";
 const MonthlyView = () => {
   const { currentDate } = useCalendar();
   const calendarDays = GenerateCalendar(currentDate);
-  const [events, setEvents] = useState<EventsByDate>({});
-
-  // useEffect(() => {
-  //   fetch("/api/events")
-  //     .then((response) => response.json())
-  //     .then((data: Event[]) => setEvents(data))
-  //     .catch(console.error);
-  // }, [currentDate]);
+  const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
-    const fetchedEvents: Event[] = [
-      {
-        _id: "1",
-        title: "Design review",
-        startDate: "2023-12-24",
-        endDate: "2023-12-26",
-        isFullDay: true,
-        repeat: "none",
-      },
-      {
-        _id: "2",
-        title: "Sales meeting",
-        startDate: "2023-12-27",
-        startTime: "2:00",
-        endTime: "4:00",
-        isFullDay: false,
-        repeat: "none",
-      },
-      {
-        _id: "3",
-        title: "Design review",
-        startDate: "2023-12-28",
-        endDate: "2023-12-28",
-        isFullDay: true,
-        repeat: "none",
-      },
-      {
-        _id: "4",
-        title: "Design review",
-        startDate: "2023-12-29",
-        isFullDay: true,
-        repeat: "none",
-      },
-      {
-        _id: "5",
-        title: "Code review",
-        startDate: "2024-01-01",
-        endDate: "2024-01-03",
-        isFullDay: false,
-        startTime: "2:00",
-        endTime: "4:00",
-        repeat: "none",
-      },
-      {
-        _id: "6",
-        title: "Design review",
-        startDate: "2024-01-04",
-        isFullDay: true,
-        repeat: "none",
-      },
-    ];
+    fetch("http://localhost:5000/events") // Replace with the actual URL
+      .then((response) => response.json())
+      .then((data: Event[]) => {
+        const newEvents: EventsByDate = data.reduce(
+          (acc: EventsByDate, event: Event) => {
+            // Convert startDate and endDate to 'YYYY-MM-DD' format
+            const formattedStartDate = event.startDate.split("T")[0];
+            const formattedEndDate = event.endDate
+              ? event.endDate.split("T")[0]
+              : undefined;
 
-    const newEvents: EventsByDate = fetchedEvents.reduce(
-      (acc: EventsByDate, event: Event) => {
-        const range: string[] = event.endDate
-          ? getDatesInRange(event.startDate, event.endDate)
-          : [event.startDate];
+            const range: string[] =
+              formattedEndDate && formattedEndDate !== formattedStartDate
+                ? getDatesInRange(formattedStartDate, formattedEndDate)
+                : [formattedStartDate];
 
-        range.forEach((date) => {
-          if (!acc[date]) {
-            acc[date] = [];
-          }
-          acc[date].push({
-            ...event,
-            startDate: date,
-            ...(event.isFullDay
-              ? { startTime: undefined, endTime: undefined }
-              : {}),
-          });
-        });
+            range.forEach((date) => {
+              if (!acc[date]) {
+                acc[date] = [];
+              }
+              acc[date].push({
+                ...event,
+                startDate: date, // Already formatted above
+                endDate: formattedEndDate, // Apply the formatted endDate
+                ...(event.isFullDay
+                  ? { startTime: undefined, endTime: undefined }
+                  : {}),
+              });
+            });
 
-        return acc;
-      },
-      {}
-    );
+            return acc;
+          },
+          {}
+        );
 
-    setEvents(newEvents);
-  }, [currentDate]);
+        setEvents(Object.values(newEvents).flat());
+
+        console.log(events);
+      })
+      .catch(console.error);
+  }, []);
 
   interface CalendarDay {
     date: number; // Assuming this is the numeric day of the month
@@ -148,29 +104,32 @@ const MonthlyView = () => {
             >
               {day.date}
             </div>
-            {events[day.fullDate] &&
-              events[day.fullDate].map((event, idx) => (
-                <div
-                  key={`${event._id}-${idx}`}
-                  className="text-left text-xs mt-1"
-                >
-                  <p
-                    style={{
-                      backgroundColor: event.isFullDay ? "#00FF00" : "#0066FF",
-                      color: "#FFFFFF",
-                      padding: "8px",
-                      borderRadius: "4px",
-                    }}
+            {events.find(
+              (event) =>
+                event.startDate === day.fullDate ||
+                event.endDate === day.fullDate
+            ) &&
+              events
+                .filter((event) => event.startDate === day.fullDate)
+                .map((event, idx) => (
+                  <div
+                    key={`${event._id}-${idx}`}
+                    className="text-left text-xs mt-1"
                   >
-                    {event.title} -{" "}
-                    {event.isFullDay
-                      ? "All day"
-                      : `${event.startTime || "Start"} to ${
-                          event.endTime || "End"
-                        }`}
-                  </p>
-                </div>
-              ))}
+                    <p
+                      className={`text-white p-1 rounded ${
+                        event.isFullDay ? "bg-green-600" : "bg-sky-600"
+                      }`}
+                    >
+                      {event.title} -{" "}
+                      {event.isFullDay
+                        ? "All day"
+                        : `${event.startTime || "Start"} to ${
+                            event.endTime || "End"
+                          }`}
+                    </p>
+                  </div>
+                ))}
           </div>
         ))}
       </div>

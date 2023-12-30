@@ -19,129 +19,76 @@ interface EventsByDateAndTime {
 const Weekly: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const { currentDate } = useCalendar(); // Using currentDate from CalendarContext
-
-  // useEffect(() => {
-  //   fetch("/api/events")
-  //     .then((response) => response.json())
-  //     .then((data: Event[]) => setEvents(data))
-  //     .catch(console.error);
-  // }, [currentDate]);
+  const [eventsByDateAndTime, setEventsByDateAndTime] =
+    useState<EventsByDateAndTime>({});
 
   useEffect(() => {
-    setEvents([
-      {
-        _id: "1",
-        title: "Design review",
-        startDate: "2023-12-24",
-        endDate: "2023-12-26",
-        isFullDay: true,
-        repeat: "none",
-      },
-      {
-        _id: "2",
-        title: "Code review",
-        startDate: "2024-01-01",
-        endDate: "2024-01-03",
-        isFullDay: false,
-        startTime: "2:00",
-        endTime: "4:00",
-        repeat: "none",
-      },
-      {
-        _id: "3",
-        title: "Sales meeting",
-        startDate: "2023-12-27",
-        startTime: "2:00",
-        endTime: "4:00",
-        isFullDay: false,
-        repeat: "none",
-      },
-      {
-        _id: "4",
-        title: "Design review",
-        startDate: "2023-12-28",
-        endDate: "2023-12-28",
-        isFullDay: true,
-        repeat: "none",
-      },
-      {
-        _id: "5",
-        title: "Design review",
-        startDate: "2023-12-29",
-        isFullDay: true,
-        repeat: "none",
-      },
-      {
-        _id: "6",
-        title: "Design review",
-        startDate: "2024-01-04",
-        isFullDay: true,
-        repeat: "none",
-      },
-    ]);
-  }, []);
+    const weekDates = getWeekDates(new Date(currentDate));
+    const startOfWeek = weekDates[0].fullDate;
+    const endOfWeek = weekDates[weekDates.length - 1].fullDate;
 
-  const weekDates = getWeekDates(currentDate);
+    const apiUrl = `http://localhost:5000/events/range?start=${startOfWeek}&end=${endOfWeek}`;
+
+    fetch(apiUrl)
+      .then((response) => response.json())
+      .then((fetchedEvents) => {
+        setEvents(fetchedEvents);
+
+        console.log("fetchedEvents", fetchedEvents);
+        const newEventsByDateAndTime: EventsByDateAndTime = {};
+
+        fetchedEvents.forEach((event: Event) => {
+          const formattedStartDate = event.startDate.split("T")[0];
+          const formattedEndDate = event.endDate
+            ? event.endDate.split("T")[0]
+            : undefined;
+
+          const range: string[] =
+            formattedEndDate && formattedEndDate !== formattedStartDate
+              ? getDatesInRange(formattedStartDate, formattedEndDate)
+              : [formattedStartDate];
+
+          // const eventDates = event.endDate
+          //   ? getDatesInRange(event.startDate, event.endDate)
+          //   : [event.startDate];
+
+          console.log("range", range);
+          range.forEach((date, index, array) => {
+            const startTime = event.startTime || "00:00"; // Use event's start time
+            const endTime = event.endTime || "23:59"; // Use event's end time
+
+            const timeSlot = `${to24HourTime(startTime)} - ${to24HourTime(
+              endTime
+            )}`;
+
+            const eventForDate = {
+              ...event,
+              startDate: date,
+              endDate: date,
+              startTime,
+              endTime,
+            };
+
+            if (!newEventsByDateAndTime[date]) {
+              newEventsByDateAndTime[date] = {};
+            }
+
+            if (!newEventsByDateAndTime[date][timeSlot]) {
+              newEventsByDateAndTime[date][timeSlot] = [];
+            }
+
+            newEventsByDateAndTime[date][timeSlot].push(eventForDate);
+          });
+        });
+
+        setEventsByDateAndTime(newEventsByDateAndTime);
+      })
+      .catch(console.error);
+  }, [currentDate]);
 
   // Populate the eventsByDateAndTime with actual events
-  events.forEach((event: Event) => {
-    if (event.isFullDay && event.endDate) {
-      const eventDates = getDatesInRange(event.startDate, event.endDate);
-      eventDates.forEach((date) => {
-        const eventForDate = { ...event, startDate: date, endDate: date };
-        if (!eventsByDateAndTime[date]) {
-          eventsByDateAndTime[date] = {};
-        }
-        // Assuming full-day events don't have start/end times
-        const timeSlot = "All day";
-        if (!eventsByDateAndTime[date][timeSlot]) {
-          eventsByDateAndTime[date][timeSlot] = [];
-        }
-        eventsByDateAndTime[date][timeSlot].push(eventForDate);
-      });
-    } else if (event.endDate) {
-      const eventDates = getDatesInRange(event.startDate, event.endDate);
-      eventDates.forEach((date) => {
-        // Provide default values if startTime or endTime are undefined
-        const startTime = event.startTime || "00:00";
-        const endTime = event.endTime || "23:59";
 
-        const eventForDate = {
-          ...event,
-          startDate: date,
-          endDate: date,
-          startTime,
-          endTime,
-        };
-        if (!eventsByDateAndTime[date]) {
-          eventsByDateAndTime[date] = {};
-        }
-
-        const timeSlot = event.isFullDay
-          ? "All day"
-          : `${to24HourTime(startTime)} - ${to24HourTime(endTime)}`;
-        if (!eventsByDateAndTime[date][timeSlot]) {
-          eventsByDateAndTime[date][timeSlot] = [];
-        }
-        eventsByDateAndTime[date][timeSlot].push(eventForDate);
-      });
-    } else {
-      const eventDate: string = event.startDate;
-      // Provide a default value for startTime if it's undefined
-      const startTime24: string = to24HourTime(event.startTime || "00:00");
-      const timeSlot: string = `${getHourIndex(startTime24)}:00`; // Adjusted to match the hour index
-
-      if (!eventsByDateAndTime[eventDate]) {
-        eventsByDateAndTime[eventDate] = {};
-      }
-      if (!eventsByDateAndTime[eventDate][timeSlot]) {
-        eventsByDateAndTime[eventDate][timeSlot] = [];
-      }
-      eventsByDateAndTime[eventDate][timeSlot].push(event);
-    }
-  });
-
-  console.log("Events by date and time:", eventsByDateAndTime); // Debugging line
+  const weekDates = getWeekDates(currentDate);
 
   return (
     <div className="flex flex-col">
@@ -184,7 +131,7 @@ const Weekly: React.FC = () => {
                   <div
                     key={event._id}
                     className={`absolute ${
-                      event.isFullDay ? "bg-green-500" : "bg-sky-600"
+                      event.isFullDay ? "bg-green-600" : "bg-sky-600"
                     } text-white text-xs rounded`}
                     style={{
                       top: calculateTop(event) + "px",
@@ -202,8 +149,6 @@ const Weekly: React.FC = () => {
             )}
           </div>
         ))}
-
-        {/*  */}
       </div>
     </div>
   );

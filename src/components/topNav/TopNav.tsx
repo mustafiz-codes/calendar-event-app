@@ -22,10 +22,10 @@ const TopNav = () => {
   const { toggleSidebar } = useSidebar();
   const {
     currentDate,
-    setCurrentDate,
     viewType,
     setViewType,
     goToPreviousMonth,
+    setCurrentDate,
     goToNextMonth,
     goToPreviousWeek,
     goToNextWeek,
@@ -33,18 +33,20 @@ const TopNav = () => {
   } = useCalendar();
 
   const handlePrevious = () => {
-    if (viewType === "week") {
-      goToPreviousWeek();
-    } else {
+    console.log("handlePrevious ", viewType);
+    if (viewType === "month") {
       goToPreviousMonth();
+    } else {
+      goToPreviousWeek();
     }
   };
 
   const handleNext = () => {
-    if (viewType === "week") {
-      goToNextWeek();
-    } else {
+    console.log("handleNext ", viewType);
+    if (viewType === "month") {
       goToNextMonth();
+    } else {
+      goToNextWeek();
     }
   };
 

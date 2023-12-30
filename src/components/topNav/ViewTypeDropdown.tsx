@@ -2,12 +2,23 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown } from "@fortawesome/free-solid-svg-icons";
+import { useCalendar } from "../../context/CalendarContext";
 
 const ViewTypeDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selection, setSelection] = useState("Week");
   const location = useLocation();
-
+  const {
+    currentDate,
+    viewType,
+    setViewType,
+    goToPreviousMonth,
+    setCurrentDate,
+    goToNextMonth,
+    goToPreviousWeek,
+    goToNextWeek,
+    goToToday,
+  } = useCalendar();
   const toggleDropdown = () => setIsOpen(!isOpen);
 
   const viewTypeChange = (type: string) => {
@@ -20,10 +31,12 @@ const ViewTypeDropdown = () => {
     const path = location.pathname;
     if (path === "/month") {
       setSelection("Month");
+      setViewType("month");
     } else if (path === "/year") {
       setSelection("Year");
     } else {
       setSelection("Week");
+      setViewType("week");
     }
   }, [location]);
 

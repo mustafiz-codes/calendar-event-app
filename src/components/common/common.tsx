@@ -11,6 +11,7 @@ export interface Event {
   repeatCycle?: number;
 }
 
+
 export const getDatesInRange = (
   startDate: string,
   endDate: string
@@ -19,9 +20,14 @@ export const getDatesInRange = (
   const end = new Date(endDate);
   const dates = [];
 
-  while (start <= end) {
+  while (start < end) {
     dates.push(new Date(start).toISOString().split("T")[0]); // 'YYYY-MM-DD'
     start.setDate(start.getDate() + 1);
+  }
+
+  // Add the end date only if it is different from the start date
+  if (startDate !== endDate) {
+    dates.push(endDate);
   }
 
   return dates;
