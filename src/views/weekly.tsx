@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { useCalendar } from "../context/CalendarContext";
 import {
   Event,
@@ -12,15 +13,22 @@ import {
   times,
   to24HourTime,
 } from "../components/common/common";
+import ViewEvent from "../components/event/ViewEvent";
 interface EventsByDateAndTime {
   [fullDate: string]: { [startTime: string]: Event[] };
 }
 
 const Weekly: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
+  const [isModalOpen, setModalOpen] = useState(false);
+
   const { currentDate } = useCalendar(); // Using currentDate from CalendarContext
   const [eventsByDateAndTime, setEventsByDateAndTime] =
     useState<EventsByDateAndTime>({});
+
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+
+  // const [selectedEvent, setSelectedEvent] = useState<Event[]>([]);
 
   useEffect(() => {
     const weekDates = getWeekDates(new Date(currentDate));
@@ -39,9 +47,13 @@ const Weekly: React.FC = () => {
 
         fetchedEvents.forEach((event: Event) => {
           const formattedStartDate = event.startDate.split("T")[0];
+
+          if (event.endDate === null) {
+            event.endDate = formattedStartDate;
+          }
           const formattedEndDate = event.endDate
             ? event.endDate.split("T")[0]
-            : undefined;
+            : "undefined";
 
           const range: string[] =
             formattedEndDate && formattedEndDate !== formattedStartDate
@@ -90,67 +102,91 @@ const Weekly: React.FC = () => {
 
   const weekDates = getWeekDates(currentDate);
 
-  return (
-    <div className="flex flex-col">
-      {/* Day Names */}
-      <div className="flex">
-        <div className="w-16" /> {/* Placeholder for time column */}
-        {weekDates.map((weekDate) => (
-          <div
-            key={weekDate.dayOfWeek}
-            className="flex-1 text-center py-2 border"
-          >
-            <div>{weekDate.dayOfWeek}</div>
-            <div>{weekDate.date}</div>
-          </div>
-        ))}
-      </div>
+  const handleEventClick = (eventId: string) => {
+    console.log("sending", eventId);
+    setSelectedEventId(eventId);
+    setModalOpen(true);
+  };
 
-      {/* Time Slots and Events */}
-      <div className="flex flex-grow">
-        {/* Time Column */}
-        <div className="w-16">
-          {times.map((time) => (
+  const modalContent = isModalOpen && selectedEventId && (
+    <ViewEvent
+      eventId={selectedEventId}
+      isOpen={isModalOpen}
+      onClose={() => setModalOpen(false)}
+    />
+  );
+
+  return (
+    <>
+      <div className="flex flex-col">
+        {/* Day Names */}
+        <div className="flex">
+          <div className="w-16" /> {/* Placeholder for time column */}
+          {weekDates.map((weekDate) => (
             <div
-              key={time}
-              className="h-12 border-b flex items-center justify-center text-xs"
+              key={weekDate.dayOfWeek}
+              className="flex-1 text-center py-2 border"
             >
-              {time}
+              <div>{weekDate.dayOfWeek}</div>
+              <div>{weekDate.date}</div>
             </div>
           ))}
         </div>
 
-        {weekDates.map((weekDate, index) => (
-          <div key={weekDate.fullDate} className="flex-1 border-l relative">
-            {Object.entries(
-              eventsByDateAndTime[weekDate.fullDate] || {}
-            ).flatMap(([startTime, events]) =>
-              events.map((event: Event) => {
-                const [width, left] = calculateWidthAndLeft(event, index);
-                return (
-                  <div
-                    key={event._id}
-                    className={`absolute ${
-                      event.isFullDay ? "bg-green-600" : "bg-sky-600"
-                    } text-white text-xs rounded`}
-                    style={{
-                      top: calculateTop(event) + "px",
-                      height: calculateHeight(event) + "px",
-                      left: `${left}%`,
-                      width: `${width}%`,
-                      margin: "1px",
-                    }}
-                  >
-                    {event.title} ({event.startTime || "00:00"} -{" "}
-                    {event.endTime || "24:00"})
-                  </div>
-                );
-              })
-            )}
+        {/* Time Slots and Events */}
+        <div className="flex flex-grow">
+          {/* Time Column */}
+          <div className="w-16">
+            {times.map((time) => (
+              <div
+                key={time}
+                className="h-12 border-b flex items-center justify-center text-xs"
+              >
+                {time}
+              </div>
+            ))}
           </div>
-        ))}
+
+          {weekDates.map((weekDate, index) => (
+            <div key={weekDate.fullDate} className="flex-1 border-l relative">
+              {Object.entries(
+                eventsByDateAndTime[weekDate.fullDate] || {}
+              ).flatMap(([startTime, events]) =>
+                events.map((event: Event) => {
+                  const [width, left] = calculateWidthAndLeft(event, index);
+                  return (
+                    <div
+                      key={event._id}
+                      onClick={() => handleEventClick(event._id)}
+                      className={`absolute ${
+                        event.isFullDay ? "bg-green-600" : "bg-sky-600"
+                      } text-white text-xs rounded`}
+                      style={{
+                        top: calculateTop(event) + "px",
+                        height: calculateHeight(event) + "px",
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        margin: "1px",
+                      }}
+                    >
+                      {event.title} ({event.startTime || "00:00"} -{" "}
+                      {event.endTime || "24:00"})
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+
+      {modalContent &&
+        document.getElementById("modal-root") &&
+        ReactDOM.createPortal(
+          modalContent,
+          document.getElementById("modal-root") as Element
+        )}
+    </>
   );
 };
 

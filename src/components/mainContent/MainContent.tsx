@@ -10,7 +10,7 @@ const MainContent = () => {
   return (
     <main
       data-testid="main-content"
-      className={`flex-grow transform transition-transform duration-300 ease-in-out px-4 ${
+      className={`flex-grow transform transition-transform duration-300 ease-in-out px-4 z-30 ${
         isSidebarOpen ? "ml-[300px]" : "ml-0"
       }`}
     >

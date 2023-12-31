@@ -20,6 +20,7 @@ import {
 const TopNav = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const { toggleSidebar } = useSidebar();
+
   const {
     currentDate,
     viewType,
@@ -31,6 +32,8 @@ const TopNav = () => {
     goToNextWeek,
     goToToday,
   } = useCalendar();
+
+  const handleEventCreated = () => {};
 
   const handlePrevious = () => {
     console.log("handlePrevious ", viewType);
@@ -134,7 +137,7 @@ const TopNav = () => {
             {isModalOpen && (
               <CreateEventModal
                 isOpen={isModalOpen}
-                onClose={handleCloseModal}
+                onClose={() => setModalOpen(false)}
               />
             )}
           </div>

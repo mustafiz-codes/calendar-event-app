@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -11,59 +11,216 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
 }) => {
   const [isAllDay, setIsAllDay] = useState(false);
 
-  if (!isOpen) return null;
+  const [eventData, setEventData] = useState({
+    title: "",
+    description: "",
+    notes: "",
+    startDate: "",
+    endDate: "",
+    startTime: "",
+    isFullDay: isAllDay,
+    endTime: "",
+    repeat: "none",
+    repeatCycle: "none",
+  });
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const eventData = Object.fromEntries(formData);
-    console.log(eventData, formData);
+  useEffect(() => {
+    // Reset repeatCycle when repeat is set to none
+    if (eventData.repeat === "none") {
+      setEventData({ ...eventData, repeatCycle: "none" });
+    }
+  }, [eventData.repeat]);
+
+  useEffect(() => {
+    setEventData((currentEventData) => ({
+      ...currentEventData,
+      isFullDay: isAllDay,
+    }));
+  }, [isAllDay]);
+
+  const handleInputChange = (
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = event.target;
+    setEventData({ ...eventData, [name]: value });
   };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // Add validation logic here if needed
+
+    if (eventData.endDate === null || eventData.endDate === "") {
+      eventData.endDate = eventData.startDate;
+    }
+    const timeFormat = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (
+      !isAllDay &&
+      (!timeFormat.test(eventData.startTime) ||
+        !timeFormat.test(eventData.endTime))
+    ) {
+      alert("Please enter time in HH:MM format.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      console.log("response", response.body);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error in response:", errorData);
+        throw new Error("Failed to create event");
+      }
+
+      onClose(); // Close the modal
+    } catch (error) {
+      console.error("Error in creating event:", error);
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex justify-center items-center">
       <div className="bg-white p-4 md:p-6 rounded-lg shadow-xl w-full max-w-2xl">
         <h2 className="text-lg md:text-xl font-bold mb-4">Add Event</h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 gap-4 max-h-[70vh] overflow-y-auto"
+        >
           <input
             type="text"
+            name="title"
             placeholder="Add title"
             required
             className="px-4 py-2 border rounded"
+            onChange={handleInputChange}
           />
           <textarea
+            name="description"
             placeholder="Description"
             className="px-4 py-2 border rounded"
+            onChange={handleInputChange}
           />
-          <textarea placeholder="Note" className="px-4 py-2 border rounded" />
-          <input type="date" required className="px-4 py-2 border rounded" />
+          <textarea
+            name="notes"
+            placeholder="Note"
+            className="px-4 py-2 border rounded"
+            onChange={handleInputChange}
+          />
+          <div className="flex justify-between gap-4">
+            <div className="w-full">
+              <label className="block">
+                <span className="text-gray-700">Start Date</span>
+                <input
+                  type="date"
+                  name="startDate"
+                  className="mt-1 px-4 py-2 border rounded w-full"
+                  onChange={handleInputChange}
+                />
+              </label>
+            </div>
+            <div className="w-full">
+              <label className="block">
+                <span className="text-gray-700">End Date</span>
+                <input
+                  type="date"
+                  name="endDate"
+                  className="mt-1 px-4 py-2 border rounded w-full"
+                  onChange={handleInputChange}
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={isAllDay}
               onChange={(e) => setIsAllDay(e.target.checked)}
-              className="rounded"
+              className="rounded "
             />
             <span>All day</span>
           </div>
           {!isAllDay && (
-            <div className="grid grid-cols-2 gap-4">
-              <input type="time" className="px-4 py-2 border rounded" />
-              <input type="time" className="px-4 py-2 border rounded" />
+            <div className="flex justify-between gap-4">
+              <div className="w-full">
+                <label className="block">
+                  <span className="text-gray-700">Start Time</span>
+                  <input
+                    type="time"
+                    name="startTime"
+                    className="px-4 py-2 border rounded w-full"
+                    onChange={handleInputChange}
+                  />
+                </label>
+              </div>
+              <div className="w-full">
+                <label className="block">
+                  <span className="text-gray-700">End Time</span>
+                  <input
+                    type="time"
+                    name="endTime"
+                    className="px-4 py-2 border rounded w-full"
+                    onChange={handleInputChange}
+                  />
+                </label>
+              </div>
             </div>
           )}
-          <select className="px-4 py-2 border rounded">
-            <option value="doesNotRepeat">Does not repeat</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
-          </select>
+
+          <div className="w-full">
+            <label className="block">
+              <span className="text-gray-700">Repeat</span>
+              <select
+                name="repeat"
+                className="px-4 py-2 border rounded w-full"
+                onChange={handleInputChange}
+                value={eventData.repeat}
+              >
+                <option value="none">Does not repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </label>
+          </div>
+
+          {eventData.repeat !== "none" && (
+            <div className="w-full">
+              <label className="block">
+                <span className="text-gray-700">Repeat Cycle</span>
+                <select
+                  name="repeatCycle"
+                  className="px-4 py-2 border rounded w-full"
+                  onChange={handleInputChange}
+                  value={eventData.repeatCycle}
+                >
+                  <option value="none">None</option>
+                  <option value="daily">Daily</option>
+                  <option value="biweekly">Biweekly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </label>
+            </div>
+          )}
           <button
             type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            className="bg-sky-500 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded"
           >
-            Save
+            Create Event
           </button>
           <button
             onClick={onClose}

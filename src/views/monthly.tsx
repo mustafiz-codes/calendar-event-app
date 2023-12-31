@@ -7,6 +7,7 @@ const MonthlyView = () => {
   const { currentDate } = useCalendar();
   const calendarDays = GenerateCalendar(currentDate);
   const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     fetch("http://localhost:5000/events") // Replace with the actual URL
