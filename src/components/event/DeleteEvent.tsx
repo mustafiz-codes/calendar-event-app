@@ -3,7 +3,8 @@ import React, { useState } from "react";
 interface DeleteEventModalProps {
   eventId: string;
   isOpen: boolean;
-  onClose: () => void;
+
+  onDeleteClose: () => void;
   isRecurring: boolean;
   recurringEventId: string;
 }
@@ -11,7 +12,7 @@ interface DeleteEventModalProps {
 const DeleteEventModal: React.FC<DeleteEventModalProps> = ({
   eventId,
   isOpen,
-  onClose,
+  onDeleteClose,
   isRecurring,
   recurringEventId,
 }) => {
@@ -20,19 +21,23 @@ const DeleteEventModal: React.FC<DeleteEventModalProps> = ({
   if (!isOpen) return null;
 
   const handleDeleteConfirm = async () => {
+    console.log("recurringEventId", recurringEventId);
     const deleteEndpoint =
       deleteAllRecurring && isRecurring
-        ? `http://localhost:5000/${recurringEventId}` // Endpoint for deleting all recurring events
-        : `http://localhost:5000/${eventId}`; // Endpoint for deleting a single event
+        ? `http://localhost:5000/events/recurring/${recurringEventId}` // Endpoint for deleting all recurring events
+        : `http://localhost:5000/events/${eventId}`; // Endpoint for deleting a single event
 
     try {
+      console.log("deleteEndpoint", deleteEndpoint);
       const response = await fetch(deleteEndpoint, {
         method: "DELETE",
       });
 
       if (!response.ok) throw new Error("Failed to delete event");
 
-      onClose(); // Close the modal after successful deletion
+      onDeleteClose();
+      window.location.reload();
+      // Close the modal after successful deletion
     } catch (error) {
       console.error("Error deleting event:", error);
     }
@@ -68,7 +73,7 @@ const DeleteEventModal: React.FC<DeleteEventModalProps> = ({
             Delete
           </button>
           <button
-            onClick={onClose}
+            onClick={onDeleteClose}
             className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
           >
             Cancel

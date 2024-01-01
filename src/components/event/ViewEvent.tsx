@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DeleteEventModal from "./DeleteEvent";
+import { to24HourTime } from "../common/common";
 
 interface ViewEventModalProps {
   eventId: string;
@@ -31,16 +32,30 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
     recurringEventId: "",
   });
 
-  console.log("before fetching", eventData);
-
   useEffect(() => {
     // Fetch event data based on eventId
-    // Placeholder for fetching logic - replace with actual API call or data retrieval
     fetch(`http://localhost:5000/events/${eventId}`)
       .then((response) => response.json())
       .then((data) => {
-        setEventData({ ...data });
-        setIsAllDay(eventData.isFullDay);
+        const formattedStartDate = data.startDate
+          ? data.startDate.split("T")[0]
+          : "";
+        const formattedEndDate = data.endDate ? data.endDate.split("T")[0] : "";
+        const formattedStartTime = data.startTime
+          ? to24HourTime(data.startTime)
+          : "";
+        const formattedEndTime = data.endTime ? to24HourTime(data.endTime) : "";
+
+        // Update the eventData and isAllDay state
+        setEventData({
+          ...data,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+          startTime: formattedStartTime,
+          endTime: formattedEndTime,
+        });
+
+        setIsAllDay(data.isFullDay);
       })
       .catch((error) => console.error("Error fetching event:", error));
   }, [eventId]);
@@ -81,8 +96,7 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
           body: JSON.stringify(eventData),
         });
 
-        console.log("response", response);
-
+        window.location.reload();
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Error in response:", errorData);
@@ -100,13 +114,13 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
           }
         );
 
-        console.log("response", response);
-
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Error in response:", errorData);
           throw new Error("Failed to update recurring event");
         }
+
+        window.location.reload();
       }
 
       onClose(); // Close the modal
@@ -120,7 +134,6 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
     setDeleteModalOpen(true);
   };
 
-  console.log("after fetching", eventData);
   return (
     <>
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex justify-center items-center">
@@ -189,9 +202,12 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={eventData.isFullDay}
+                checked={isAllDay}
                 disabled={viewMode}
-                onChange={(e) => setIsAllDay(e.target.checked)}
+                onChange={(e) => {
+                  setIsAllDay(e.target.checked);
+                  setEventData({ ...eventData, isFullDay: e.target.checked });
+                }}
                 className="rounded "
               />
               <span>All day</span>
@@ -325,7 +341,7 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
         <DeleteEventModal
           eventId={eventId}
           isOpen={isDeleteModalOpen}
-          onClose={() => setDeleteModalOpen(false)}
+          onDeleteClose={() => setDeleteModalOpen(false)}
           isRecurring={!!eventData.recurringEventId} // Assuming you have a way to determine if the event is recurring
           recurringEventId={eventData.recurringEventId} // Assuming this is the ID for recurring events
         />

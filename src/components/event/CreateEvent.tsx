@@ -38,18 +38,59 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
     }));
   }, [isAllDay]);
 
+  // handle endTime
+  // check startTime
+
+  // handle startTime
+  // { startTime + =1 by hour}
+
   const handleInputChange = (
     event: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value } = event.target;
-    setEventData({ ...eventData, [name]: value });
+
+    if (name === "startTime") {
+      const [hours, minutes] = value.split(":").map(Number);
+
+      const endTimeHour = (hours + 1) % 24; // Use % 24 to handle the case where startTime is 23:00
+
+      const formattedEndTime = `${endTimeHour
+        .toString()
+        .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+
+      console.log("formattedEndTime", formattedEndTime);
+
+      setEventData((currentEventData) => ({
+        ...currentEventData,
+        [name]: value,
+        endTime:
+          currentEventData.endTime === ""
+            ? formattedEndTime
+            : currentEventData.endTime,
+      }));
+    } else {
+      setEventData((currentEventData) => ({
+        ...currentEventData,
+        [name]: value,
+      }));
+    }
+    // setEventData({ ...eventData, [name]: value });
   };
+
+  useEffect(() => {
+    console.log("tartTime, endTime", eventData.startTime, eventData.endTime);
+  }, [eventData]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Add validation logic here if needed
+
+    if (eventData.startDate === null || eventData.startDate === "") {
+      alert("Please enter a start date");
+      return;
+    }
 
     if (eventData.endDate === null || eventData.endDate === "") {
       eventData.endDate = eventData.startDate;
@@ -61,6 +102,19 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
         !timeFormat.test(eventData.endTime))
     ) {
       alert("Please enter time in HH:MM format.");
+      return;
+    }
+
+    const [startHours, startMinutes] = eventData.startTime
+      .split(":")
+      .map(Number);
+    const [endHours, endMinutes] = eventData.endTime.split(":").map(Number);
+
+    if (
+      endHours < startHours ||
+      (endHours === startHours && endMinutes < startMinutes)
+    ) {
+      alert("End time cannot be before start time.");
       return;
     }
 
@@ -82,6 +136,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
       }
 
       onClose(); // Close the modal
+      window.location.reload();
     } catch (error) {
       console.error("Error in creating event:", error);
     }
@@ -124,6 +179,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                 <input
                   type="date"
                   name="startDate"
+                  required
                   className="mt-1 px-4 py-2 border rounded w-full"
                   onChange={handleInputChange}
                 />
@@ -170,6 +226,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                   <input
                     type="time"
                     name="endTime"
+                    value={eventData.endTime}
                     className="px-4 py-2 border rounded w-full"
                     onChange={handleInputChange}
                   />
