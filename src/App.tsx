@@ -10,21 +10,17 @@ function App() {
   const { theme } = useTheme();
 
   return (
-    <CalendarProvider>
-      <SidebarProvider>
-        <div
-          data-theme={theme}
-          className="flex flex-col h-screen"
-          data-testid="app-container"
-        >
-          <TopNav />
-          <div className="flex flex-auto mt-4 ">
-            <SideNav />
-            <MainContent />
-          </div>
-        </div>
-      </SidebarProvider>
-    </CalendarProvider>
+    <div
+      data-theme={theme}
+      className="flex flex-col h-screen"
+      data-testid="app-container"
+    >
+      <TopNav />
+      <div className="flex flex-auto mt-4 ">
+        <SideNav />
+        <MainContent />
+      </div>
+    </div>
   );
 }
 

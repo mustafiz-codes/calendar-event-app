@@ -28,7 +28,7 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
     isFullDay: isAllDay,
     endTime: "",
     repeat: "none",
-    repeatCycle: "none",
+    repeatCycle: 0,
     recurringEventId: "",
   });
 
@@ -265,20 +265,14 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
               <div className="w-full">
                 <label className="block">
                   <span className="text-gray-700">Repeat Cycle</span>
-                  <select
+                  <input
+                    type="number"
                     name="repeatCycle"
                     className="px-4 py-2 border rounded w-full"
                     value={eventData.repeatCycle}
                     disabled={viewMode}
                     onChange={handleInputChange}
-                  >
-                    <option value="none">None</option>
-                    <option value="daily">Daily</option>
-                    <option value="biweekly">Biweekly</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
+                  ></input>
                 </label>
               </div>
             )}

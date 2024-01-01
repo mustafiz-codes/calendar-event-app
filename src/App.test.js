@@ -1,15 +1,14 @@
 import React from "react";
-import ReactDOM from "react-dom";
-import "./index.css";
+import { render, screen } from "@testing-library/react";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
-import reportWebVitals from "./reportWebVitals";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CalendarProvider } from "./context/CalendarContext";
 import { SidebarProvider } from "./context/SidebarContext";
+import TopNav from "./components/topNav/TopNav";
 
-ReactDOM.render(
-  <React.StrictMode>
+test("renders App", () => {
+  render(
     <BrowserRouter>
       <ThemeProvider>
         <CalendarProvider>
@@ -19,11 +18,8 @@ ReactDOM.render(
         </CalendarProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+  );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+  const element = screen.getByTestId("app-container");
+  expect(element).toBeInTheDocument();
+});

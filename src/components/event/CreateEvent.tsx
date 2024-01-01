@@ -21,13 +21,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
     isFullDay: isAllDay,
     endTime: "",
     repeat: "none",
-    repeatCycle: "none",
+    repeatCycle: 0,
   });
 
   useEffect(() => {
     // Reset repeatCycle when repeat is set to none
     if (eventData.repeat === "none") {
-      setEventData({ ...eventData, repeatCycle: "none" });
+      setEventData({ ...eventData, repeatCycle: 0 });
     }
   }, [eventData.repeat]);
 
@@ -257,19 +257,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <div className="w-full">
               <label className="block">
                 <span className="text-gray-700">Repeat Cycle</span>
-                <select
+                <input
+                  type="number"
                   name="repeatCycle"
                   className="px-4 py-2 border rounded w-full"
                   onChange={handleInputChange}
                   value={eventData.repeatCycle}
-                >
-                  <option value="none">None</option>
-                  <option value="daily">Daily</option>
-                  <option value="biweekly">Biweekly</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+                ></input>
               </label>
             </div>
           )}

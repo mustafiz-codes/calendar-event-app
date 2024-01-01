@@ -8,7 +8,7 @@ export interface Event {
   endTime?: string; // Optional end time as a string, e.g., "11:00"
   isFullDay: boolean;
   repeat?: "none" | "daily" | "weekly" | "monthly" | "yearly";
-  repeatCycle?: "none" | "daily" | "biweekly" | "weekly" | "monthly" | "yearly";
+  repeatCycle?: number;
 }
 
 export const getDatesInRange = (

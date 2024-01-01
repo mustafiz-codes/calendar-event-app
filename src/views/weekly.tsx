@@ -116,6 +116,21 @@ const Weekly: React.FC = () => {
     />
   );
 
+  const calculateDayHeight = (date: string): number => {
+    const dayEvents = eventsByDateAndTime[date] || {};
+    let totalHeight = 0;
+
+    Object.entries(dayEvents).forEach(([startTime, events]) => {
+      let maxEventHeight = 0;
+      events.forEach((event) => {
+        maxEventHeight = Math.max(maxEventHeight, calculateHeight(event));
+      });
+      totalHeight += maxEventHeight;
+    });
+
+    return totalHeight;
+  };
+
   return (
     <>
       <div className="flex flex-col">
@@ -147,20 +162,38 @@ const Weekly: React.FC = () => {
             ))}
           </div>
 
+          {/* {weekDates.map((weekDate, index) => ( */}
+          {/*  <div key={weekDate.fullDate} className="flex-1 border-l relative"> */}
           {weekDates.map((weekDate, index) => (
-            <div key={weekDate.fullDate} className="flex-1 border-l relative">
+            <div
+              key={weekDate.fullDate}
+              className="flex-1 border-l relative"
+              style={{
+                minHeight: `${calculateDayHeight(weekDate.fullDate)}px`,
+              }} // Set dynamic height
+            >
               {Object.entries(
                 eventsByDateAndTime[weekDate.fullDate] || {}
               ).flatMap(([startTime, events]) =>
                 events.map((event: Event) => {
                   const [width, left] = calculateWidthAndLeft(event, index);
-                  return (
+                  return event.isFullDay ? (
+                    // Full-day event styling
                     <div
                       key={event._id}
                       onClick={() => handleEventClick(event._id)}
-                      className={`absolute ${
-                        event.isFullDay ? "bg-green-600" : "bg-sky-600"
-                      } text-white text-xs rounded`}
+                      className="text-left text-xs mt-1"
+                    >
+                      <p className={`text-white p-1 rounded bg-green-600`}>
+                        {event.title} - All day
+                      </p>
+                    </div>
+                  ) : (
+                    // Timed event styling
+                    <p
+                      key={event._id}
+                      onClick={() => handleEventClick(event._id)}
+                      className={`absolute bg-sky-600 text-white text-xs rounded`}
                       style={{
                         top: calculateTop(event) + "px",
                         height: calculateHeight(event) + "px",
@@ -171,7 +204,7 @@ const Weekly: React.FC = () => {
                     >
                       {event.title} ({event.startTime || "00:00"} -{" "}
                       {event.endTime || "24:00"})
-                    </div>
+                    </p>
                   );
                 })
               )}

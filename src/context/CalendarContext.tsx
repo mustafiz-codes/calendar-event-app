@@ -1,7 +1,7 @@
 // CalendarContext.js
 import React, { ReactNode, createContext, useContext, useState } from "react";
 
-interface CalendarContextType {
+export interface CalendarContextType {
   currentDate: Date;
   viewType: "week" | "month";
   setCurrentDate: (date: Date) => void;
@@ -13,7 +13,7 @@ interface CalendarContextType {
   goToToday: () => void;
 }
 
-const CalendarContext = createContext<CalendarContextType>({
+export const CalendarContext = createContext<CalendarContextType>({
   currentDate: new Date(),
   viewType: "week",
   setCurrentDate: () => {},
