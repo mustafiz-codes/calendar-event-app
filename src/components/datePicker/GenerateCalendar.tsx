@@ -1,5 +1,5 @@
 // GenerateCalendar.tsx
-interface CalendarDay {
+export interface CalendarDay {
   date: number;
   isToday: boolean;
   fullDate: string;
