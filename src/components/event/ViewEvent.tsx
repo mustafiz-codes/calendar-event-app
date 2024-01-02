@@ -28,7 +28,7 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
     isFullDay: isAllDay,
     endTime: "",
     repeat: "none",
-    repeatCycle: 0,
+    repeatCycle: 1,
     recurringEventId: "",
   });
 
@@ -66,12 +66,59 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
     >
   ) => {
     const { name, value } = event.target;
-    setEventData({ ...eventData, [name]: value });
+
+    setEventData((currentEventData) => {
+      const newEventData = { ...currentEventData, [name]: value };
+
+      if (name === "startTime") {
+        const [hours, minutes] = value.split(":").map(Number);
+        const endTimeHour = (hours + 1) % 24; // Use % 24 to handle the case where startTime is 23:00
+        const formattedEndTime = `${endTimeHour
+          .toString()
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+
+        return {
+          ...newEventData,
+          endTime:
+            currentEventData.endTime === ""
+              ? formattedEndTime
+              : currentEventData.endTime,
+        };
+      } else if (name === "startDate" || name === "endDate") {
+        if (newEventData.startDate && newEventData.endDate) {
+          const start = new Date(newEventData.startDate);
+          const end = new Date(newEventData.endDate);
+
+          if (start > end) {
+            return {
+              ...newEventData,
+              startDate:
+                name === "endDate"
+                  ? newEventData.endDate
+                  : newEventData.startDate,
+              endDate:
+                name === "startDate"
+                  ? newEventData.startDate
+                  : newEventData.endDate,
+            };
+          }
+        }
+      }
+
+      return newEventData;
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Add validation logic here if needed
+
+    event.preventDefault();
+
+    if (eventData.startDate === null || eventData.startDate === "") {
+      alert("Please enter a start date");
+      return;
+    }
 
     if (eventData.endDate === null || eventData.endDate === "") {
       eventData.endDate = eventData.startDate;
@@ -86,15 +133,56 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
       return;
     }
 
+    if (eventData.repeatCycle < 1) {
+      eventData.repeatCycle = 1;
+      alert("repeatCycle can't be less then 1");
+    }
+
+    const [startHours, startMinutes] = eventData.startTime
+      .split(":")
+      .map(Number);
+    const [endHours, endMinutes] = eventData.endTime.split(":").map(Number);
+
+    if (
+      endHours < startHours ||
+      (endHours === startHours && endMinutes < startMinutes)
+    ) {
+      alert("End time cannot be before start time.");
+      return;
+    }
+
+    if (isRecurringUpdate) {
+      const originalData = await fetch(
+        `http://localhost:5000/events/${eventId}`
+      ).then((response) => response.json());
+
+      // Check if any restricted fields have been modified
+      if (
+        eventData.startDate !== originalData.startDate ||
+        eventData.endDate !== originalData.endDate ||
+        eventData.repeat !== originalData.repeat ||
+        eventData.repeatCycle !== originalData.repeatCycle ||
+        eventData.recurringEventId !== originalData.recurringEventId
+      ) {
+        alert(
+          "You can only update title, description, notes, time, and isFullDay for recurring events."
+        );
+        return;
+      }
+    }
+
     try {
       if (!isRecurringUpdate) {
-        const response = await fetch("http://localhost:5000/events", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(eventData),
-        });
+        const response = await fetch(
+          `http://localhost:5000/events/${eventId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(eventData),
+          }
+        );
 
         window.location.reload();
         if (!response.ok) {
@@ -104,7 +192,7 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
         }
       } else {
         const response = await fetch(
-          `http://localhost:5000/events/${eventData.recurringEventId}`,
+          `http://localhost:5000/events/recurring/${eventData.recurringEventId}`,
           {
             method: "PUT",
             headers: {
@@ -128,6 +216,7 @@ const ViewEvent: React.FC<ViewEventModalProps> = ({
       console.error("Error in creating/updating event:", error);
     }
   };
+
   if (!isOpen) return null;
 
   const handleDelete = () => {

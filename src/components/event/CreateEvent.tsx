@@ -21,13 +21,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
     isFullDay: isAllDay,
     endTime: "",
     repeat: "none",
-    repeatCycle: 0,
+    repeatCycle: 1,
   });
 
   useEffect(() => {
     // Reset repeatCycle when repeat is set to none
     if (eventData.repeat === "none") {
-      setEventData({ ...eventData, repeatCycle: 0 });
+      setEventData({ ...eventData, repeatCycle: 1 });
     }
   }, [eventData.repeat]);
 
@@ -38,12 +38,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
     }));
   }, [isAllDay]);
 
-  // handle endTime
-  // check startTime
-
-  // handle startTime
-  // { startTime + =1 by hour}
-
   const handleInputChange = (
     event: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -51,41 +45,50 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
   ) => {
     const { name, value } = event.target;
 
-    if (name === "startTime") {
-      const [hours, minutes] = value.split(":").map(Number);
+    setEventData((currentEventData) => {
+      const newEventData = { ...currentEventData, [name]: value };
 
-      const endTimeHour = (hours + 1) % 24; // Use % 24 to handle the case where startTime is 23:00
+      if (name === "startTime") {
+        const [hours, minutes] = value.split(":").map(Number);
+        const endTimeHour = (hours + 1) % 24; // Use % 24 to handle the case where startTime is 23:00
+        const formattedEndTime = `${endTimeHour
+          .toString()
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 
-      const formattedEndTime = `${endTimeHour
-        .toString()
-        .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+        return {
+          ...newEventData,
+          endTime:
+            currentEventData.endTime === ""
+              ? formattedEndTime
+              : currentEventData.endTime,
+        };
+      } else if (name === "startDate" || name === "endDate") {
+        if (newEventData.startDate && newEventData.endDate) {
+          const start = new Date(newEventData.startDate);
+          const end = new Date(newEventData.endDate);
 
-      console.log("formattedEndTime", formattedEndTime);
+          if (start > end) {
+            return {
+              ...newEventData,
+              startDate:
+                name === "endDate"
+                  ? newEventData.endDate
+                  : newEventData.startDate,
+              endDate:
+                name === "startDate"
+                  ? newEventData.startDate
+                  : newEventData.endDate,
+            };
+          }
+        }
+      }
 
-      setEventData((currentEventData) => ({
-        ...currentEventData,
-        [name]: value,
-        endTime:
-          currentEventData.endTime === ""
-            ? formattedEndTime
-            : currentEventData.endTime,
-      }));
-    } else {
-      setEventData((currentEventData) => ({
-        ...currentEventData,
-        [name]: value,
-      }));
-    }
-    // setEventData({ ...eventData, [name]: value });
+      return newEventData;
+    });
   };
-
-  useEffect(() => {
-    console.log("tartTime, endTime", eventData.startTime, eventData.endTime);
-  }, [eventData]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Add validation logic here if needed
 
     if (eventData.startDate === null || eventData.startDate === "") {
       alert("Please enter a start date");
@@ -117,6 +120,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
       alert("End time cannot be before start time.");
       return;
     }
+
+    console.log("before post eventData", eventData);
 
     try {
       const response = await fetch("http://localhost:5000/events", {
@@ -179,6 +184,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                 <input
                   type="date"
                   name="startDate"
+                  value={eventData.startDate}
                   required
                   className="mt-1 px-4 py-2 border rounded w-full"
                   onChange={handleInputChange}
@@ -191,6 +197,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                 <input
                   type="date"
                   name="endDate"
+                  value={eventData.endDate}
                   className="mt-1 px-4 py-2 border rounded w-full"
                   onChange={handleInputChange}
                 />
@@ -259,6 +266,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
                 <span className="text-gray-700">Repeat Cycle</span>
                 <input
                   type="number"
+                  min={1}
                   name="repeatCycle"
                   className="px-4 py-2 border rounded w-full"
                   onChange={handleInputChange}
