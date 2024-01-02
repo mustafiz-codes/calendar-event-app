@@ -37,7 +37,6 @@ const SingleDatePicker = () => {
           className="text-gray-600 hover:text-gray-800"
         >
           <FontAwesomeIcon icon={faChevronLeft} />
-          {"<"}
         </button>
         <div>
           <span className="text-lg font-semibold">
@@ -54,7 +53,6 @@ const SingleDatePicker = () => {
           className="text-gray-600 hover:text-gray-800"
         >
           <FontAwesomeIcon icon={faChevronRight} />
-          {">"}
         </button>
       </div>
 
